@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 
 namespace RestApi.Controllers
 {
@@ -6,14 +7,17 @@ namespace RestApi.Controllers
     [Route("[controller]")]
     public class SettingsController : ControllerBase
     {
-        public SettingsController()
+        private readonly IConfiguration _configuration;
+
+        public SettingsController(IConfiguration configuration)
         {
+            _configuration = configuration;
         }
 
         [HttpGet]
         public string Get()
         {
-            return "asdf";
+            return _configuration["SomeRandomConfiguration"];
         }
     }
 }
