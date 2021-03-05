@@ -38,8 +38,8 @@ To follow this guide, you need an Azure Subscription to be able to create an res
 - Press Apply
 - Add another Key-value pair: Key: "SomeRandomConfiguration", Value: "test-value", Label: "Development" and Content-Type empty
 
-__Optional steps:__
-To add another label to your value, right click some key, click "Add value", enter another value and add a new label.
+  __Optional steps:__
+  To add another label to your value, right click some key, click "Add value", enter another value and add a new label.
 
 ### 3. Create a C# project 
 (we will use an ASP.Net Core Rest API for demonstration purposes) 
