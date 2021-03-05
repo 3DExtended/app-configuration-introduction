@@ -29,7 +29,19 @@ To follow this guide, you need an Azure Subscription to be able to create an res
 - Click on "Access keys" (left menu) 
 - Copy your primary "Connection string" (this will go into the appsettings of your application later)
 
-### 2. Create a C# project 
+### 2. Add your first app configuration settings:
+
+- Go to your new Azure resource of type "App Configuration"
+- Navigate to the section "Operations" -> "Configuration explorer"
+- Press Create and then on "Key-value" 
+- Enter as Key: "AppConfiguration:ChangeThisToUpdate", Value: 0 and Label: "Development" (Content-Type can be left empty).
+- Press Apply
+- Add another Key-value pair: Key: "SomeRandomConfiguration", Value: "test-value", Label: "Development" and Content-Type empty
+
+__Optional steps:__
+To add another label to your value, right click some key, click "Add value", enter another value and add a new label.
+
+### 3. Create a C# project 
 (we will use an ASP.Net Core Rest API for demonstration purposes) 
 
 - Open Visual Studio 2019
@@ -40,7 +52,7 @@ To follow this guide, you need an Azure Subscription to be able to create an res
 - Now configure your ASP.Net Web Application as "ASP.Net Core Web API" (you can omit the "Configure for HTTPS"-option)
 - Press create
 
-### 3. Integrate "App Configuration" into application
+### 4. Integrate "App Configuration" into application
 
 - Install the NuGet package: "Microsoft.Azure.AppConfiguration.AspNetCore" (at the time of writing version 4.1.0)
 - Modify "appsettings.json":
@@ -57,6 +69,82 @@ To follow this guide, you need an Azure Subscription to be able to create an res
   __Important note:__ Please make sure not to commit or push your connection string into a repo. The connection string should be saved as an environment variable on the executing machine. We do this here only for demo purposes. (See [here](https://docs.microsoft.com/de-de/aspnet/core/fundamentals/configuration/?view=aspnetcore-5.0#environment-variables) for more details)
 
 - Modify Program.cs:
+  - Add a new method:
+    ```cs
+    /// <summary>
+    /// Starts a Task that runs indefinitely and regulary refreshes all stored configuration from Azure App configuration
+    /// </summary>
+    private static void StartRefreshingRegularly(IConfigurationRefresher configurationRefresher)
+    {
+        Task.Run(async () =>
+        {
+            while (true)
+            {
+                try
+                {
+                    await Task.Delay(30_000).ConfigureAwait(false);
+                    var result = await configurationRefresher.TryRefreshAsync().ConfigureAwait(false);
+                    if (result)
+                    {
+                        Console.WriteLine("Refreshed configuration from Azure App Configuration.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Could not refresh configuration from Azure App Configuration.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine(ex);
+                }
+            }
+        });
+    }
+    ```
+  - Replace the CreateHostBuilder method with this new one:
+    __Remark:__ You might need to add this using: ```using Microsoft.Extensions.Configuration.AzureAppConfiguration;```
+    
+    ```cs
+    public static IHostBuilder CreateHostBuilder(string[] args)
+    {
+        return Host.CreateDefaultBuilder(args)
+            .ConfigureWebHostDefaults(webBuilder =>
+                webBuilder.ConfigureAppConfiguration(config =>
+                {
+                    var settings = config.Build();
+
+                    // read connection details from current configuration
+                    // (env. variables or user secrets should be used here!
+                    var connectionString = settings.GetSection("AppConfiguration")["ConnectionString"];
+                    var label = settings.GetSection("AppConfiguration")["Label"];
+
+                    config.AddAzureAppConfiguration(options =>
+                    {
+                        // connect to Azure App Configuration but only take values with the environment label
+                        options.Connect(connectionString)
+                            .ConfigureRefresh(opt =>
+                            {
+                                // Register a key in azure app configuration that when it is changed will update all loaded configurtations
+                                opt.Register("AppConfiguration:ChangeThisToUpdate", label, refreshAll: true)
+                                  .SetCacheExpiration(TimeSpan.FromSeconds(30));
+                            })
+
+                            // filter only for keys under a given label
+                            // (in this case a string we can define in the configuration outside of app configuration)
+                            .Select(KeyFilter.Any, label)
+                            .UseFeatureFlags(opt =>
+                            {
+                                opt.Label = label;
+                                opt.CacheExpirationInterval = TimeSpan.FromSeconds(30);
+                            });
+
+                        // create a function that will automatically refresh every 30 seconds to look for changes in "AppConfiguration:ChangeThisToUpdate"
+                        StartRefreshingRegularly(options.GetRefresher());
+                    }, optional: false);
+                })
+                .UseStartup<Startup>());
+    }
+    ```
 
 - Modify Startup.cs:
 
@@ -101,6 +189,10 @@ To follow this guide, you need an Azure Subscription to be able to create an res
       }
   }
   ```
+
+### 5. Test your setup
+
+If you now run your API (preferably not using IIS), your browser should open. If you then navigate to [https://localhost:5001/settings](https://localhost:5001/settings) you should see the value you have entered into App Configuration. Congratulations!
 
 
 ## Further reading
