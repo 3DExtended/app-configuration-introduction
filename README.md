@@ -11,7 +11,7 @@ It is really simple to incorporate Azure App Configuration into any .Net applica
 
 ## Prerequisites
 
-To follow this guide, you need an Azure Subscription to be able to create an resource named "App Configuration".
+To follow this guide, you need an Azure Subscription to be able to create an resource named "App Configuration" (create one for free [here](https://azure.microsoft.com/free/dotnet)) and [Visual Studio 2019](https://visualstudio.microsoft.com/de/downloads/).
 
 ## Getting Started
 
@@ -66,7 +66,7 @@ To add another label to your value, right click some key, click "Add value", ent
     }
   }
   ```
-  __Important note:__ Please make sure not to commit or push your connection string into a repo. The connection string should be saved as an environment variable on the executing machine. We do this here only for demo purposes. (See [here](https://docs.microsoft.com/de-de/aspnet/core/fundamentals/configuration/?view=aspnetcore-5.0#environment-variables) for more details)
+  __Important note:__ Please make sure not to commit or push your connection string into a repo. The connection string should be saved as an environment variable on the executing machine. We do this here only for demo purposes. (See [here](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-5.0#environment-variables) for more details)
 
 - Modify Program.cs:
   - Add a new method:
@@ -193,7 +193,11 @@ To add another label to your value, right click some key, click "Add value", ent
 ### 5. Test your setup
 
 If you now run your API (preferably not using IIS), your browser should open. If you then navigate to [https://localhost:5001/settings](https://localhost:5001/settings) you should see the value you have entered into App Configuration. Congratulations!
+If you now change the value for Key "SomeRandomConfiguration" and the label "Development" in App Configuration and confirm your change by modifing the value of the setting "AppConfiguration:ChangeThisToUpdate" for the same label, the Api updates its configuration within the next 30 seconds and should then display the updated value when you reload your [page](https://localhost:5001/settings).
 
 
 ## Further reading
 
+1. Learn about Feature Toggles in App Configuration to enable and disable certain features of you application: [Introduction to feature flags](https://docs.microsoft.com/en-us/azure/azure-app-configuration/concept-feature-management) and [ASP.NET Core integration](https://docs.microsoft.com/en-us/azure/azure-app-configuration/quickstart-feature-flag-aspnet-core)
+2. Azure App Configuration FAQ: [here](https://docs.microsoft.com/en-us/azure/azure-app-configuration/faq)
+3. Azure App Configuration using CLI: [here](https://docs.microsoft.com/en-us/azure/azure-app-configuration/cli-samples)
